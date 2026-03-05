@@ -232,22 +232,23 @@
     return { drawNumber: null, drawDate: null, drawTime: null, numbers, bullseye };
   }
 
-  function parsePastPage(html) {
-    // Past page structure (bodyText excerpt):
-    // "Draw Number: 3242872  Draw Date: March 3, 2026 | Draw Time: 1:44 p.m.
-    //  Bulls-eye number is {number} 5  4  15  25 ..."
-    const doc = new DOMParser().parseFromString(html, 'text/html');
+ const doc = new DOMParser().parseFromString(html, 'text/html');
+    
+    // 1. Try to find the specific metadata container first
+    // CA Lottery often uses specific classes or data attributes
     const bodyText = doc.body ? doc.body.innerText : '';
 
-    // Draw metadata
-    const drawNumMatch = bodyText.match(/Draw Number:\s*(\d{7})/);
-    const drawNumber = drawNumMatch ? drawNumMatch[1] : null;
+    // 2. More Flexible Date RegEx
+    // This looks for words like March followed by digits and a year
+    const dateMatch = bodyText.match(/(?:Draw Date:|Date:)\s*([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i);
+    
+    // 3. More Flexible Time RegEx
+    // Looks for 1:44 pm, 01:44 PM, 1:44p.m., etc.
+    const timeMatch = bodyText.match(/(?:Draw Time:|Time:)\s*(\d{1,2}:\d{2}\s*[ap]\.?m\.?)/i);
 
-    const dateMatch = bodyText.match(/Draw Date:\s*([A-Za-z]+ \d+, \d{4})/);
-    const timeMatch = bodyText.match(/Draw Time:\s*([\d]+:[\d]+ [apm.]+)/i);
-    const drawDate = dateMatch ? dateMatch[1].trim() : '';
-    const drawTime = timeMatch ? timeMatch[1].replace(/\./g,'').trim() : '';
-
+    const drawDate = dateMatch ? dateMatch[1].trim() : "Date Unavailable";
+    const drawTime = timeMatch ? timeMatch[1].replace(/\./g,'').toUpperCase().trim() : "--:--";
+  
     // Bullseye: "Bulls-eye number is {number} 5"
     const bsMatch = bodyText.match(/Bulls-eye number is \{number\}\s*(\d+)/i);
     const bullseye = bsMatch ? parseInt(bsMatch[1]) : null;
